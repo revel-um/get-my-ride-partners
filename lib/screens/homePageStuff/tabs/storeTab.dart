@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -9,8 +8,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:get_my_ride_partners_1/apis/AllApis.dart';
 import 'package:get_my_ride_partners_1/components/shimmerWidget.dart';
 import 'package:get_my_ride_partners_1/globalsAndConstants/allConstants.dart';
-import 'package:get_my_ride_partners_1/screens/homePageStuff/tabs/addVehiclesTab.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'addVehiclesTab.dart';
+
 
 class StoreTab extends StatefulWidget {
   final changeTab;
@@ -343,6 +344,7 @@ class _StoreTabState extends State<StoreTab> {
   @override
   void initState() {
     super.initState();
+    print('initState');
     var keyboardVisibilityController = KeyboardVisibilityController();
     keyboardSubscription =
         keyboardVisibilityController.onChange.listen((bool visible) {
@@ -354,7 +356,6 @@ class _StoreTabState extends State<StoreTab> {
       SystemUiOverlayStyle(
         statusBarColor: Colors.white,
         systemNavigationBarColor: Colors.white,
-        systemNavigationBarDividerColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
         statusBarIconBrightness: Brightness.dark,
       ),
@@ -449,10 +450,9 @@ class _StoreTabState extends State<StoreTab> {
   List<Widget> getVehicleList(query) {
     List<Widget> list = [];
     productRepo.forEach((element) {
-      if (vehicleTypes[element['criteria']] == true) {
-        final searchText = element['criteria'].toLowerCase() +
-            element['model'].toLowerCase() +
-            element['licencePlate'].toLowerCase();
+      if (vehicleTypes[element['criteria'].toString().toUpperCase()] == true) {
+        final searchText =
+            element['criteria'].toLowerCase() + element['model'].toLowerCase();
         query = query.toLowerCase();
         if (isSubsequence(query, searchText)) {
           Widget item = Padding(
@@ -487,29 +487,30 @@ class _StoreTabState extends State<StoreTab> {
                                 : Icon(Icons.image_not_supported_sharp),
                           ),
                         ),
-                        Positioned(
-                          bottom: 20.0,
-                          child: Container(
-                            height: 35,
-                            width: 80,
-                            child: Center(
-                              child: Text(
-                                '\u20B9${element['rentPerHour']} / hr',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16),
+                        if (element['rentPerHour'] != null)
+                          Positioned(
+                            bottom: 20.0,
+                            child: Container(
+                              height: 35,
+                              width: 80,
+                              child: Center(
+                                child: Text(
+                                  '\u20B9${element['rentPerHour']} / hr',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
+                                ),
+                              ),
+                              decoration: BoxDecoration(
+                                color: MyColors.primaryColor,
+                                borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(10),
+                                  bottomRight: Radius.circular(10),
+                                ),
                               ),
                             ),
-                            decoration: BoxDecoration(
-                              color: MyColors.primaryColor,
-                              borderRadius: BorderRadius.only(
-                                topRight: Radius.circular(10),
-                                bottomRight: Radius.circular(10),
-                              ),
-                            ),
-                          ),
-                        )
+                          )
                       ],
                     ),
                     Padding(
@@ -547,7 +548,9 @@ class _StoreTabState extends State<StoreTab> {
                                       ),
                                       Text(' : '),
                                       Text(
-                                        element['licencePlate'].isNotEmpty
+                                        element['licencePlate'] != null &&
+                                                element['licencePlate']
+                                                    .isNotEmpty
                                             ? element['licencePlate']
                                             : 'NA',
                                       ),

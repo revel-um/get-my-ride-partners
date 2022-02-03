@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get_my_ride_partners_1/apis/AllApis.dart';
 import 'package:get_my_ride_partners_1/components/shimmerWidget.dart';
@@ -14,11 +16,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int navigationIndex = 0;
   bool isAbsorbing = false;
+  late Timer timer;
 
   @override
   void initState() {
     super.initState();
-    isAbsorbing = true;
+    isAbsorbing = false;
     AllApis.staticContext = context;
     AllApis.staticPage = HomeScreen();
   }
@@ -52,8 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 selectedItemColor: navigationIndex == 1
                     ? Color(0xFFFF9933)
                     : MyColors.primaryColor,
-                backgroundColor:
-                    navigationIndex == 1 ? Color(0xFFF1F1F1) : Colors.white,
+                backgroundColor: Colors.white,
                 onTap: (index) {
                   navigationIndex = index;
                   setState(() {});

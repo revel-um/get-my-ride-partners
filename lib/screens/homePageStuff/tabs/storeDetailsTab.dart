@@ -1,12 +1,12 @@
 import 'dart:io';
 
-import 'package:collection/collection.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_my_ride_partners_1/apis/AllApis.dart';
 import 'package:get_my_ride_partners_1/components/expandListView.dart';
+import 'package:get_my_ride_partners_1/components/timeTextFields.dart';
 import 'package:get_my_ride_partners_1/globalsAndConstants/allConstants.dart';
+import 'package:get_my_ride_partners_1/models/weekDaysInfo.dart';
 import 'package:get_my_ride_partners_1/screens/storeCreationStuff/createStore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -23,50 +23,36 @@ class StoreDetailsTab extends StatefulWidget {
 }
 
 class _StoreDetailsTabState extends State<StoreDetailsTab> {
-  Map<int, bool> days = {
-    0: false,
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-    5: false,
-    6: false,
+  Map<String, WeekDaysInfo> workingDays = {
+    'Monday': WeekDaysInfo('Monday'),
+    'Tuesday': WeekDaysInfo('Tuesday'),
+    'Wednesday': WeekDaysInfo('Wednesday'),
+    'Thursday': WeekDaysInfo('Thursday'),
+    'Friday': WeekDaysInfo('Friday'),
+    'Saturday': WeekDaysInfo('Saturday'),
+    'Sunday': WeekDaysInfo('Sunday'),
   };
-
-  Map<String, String> updateDetails = {}, initialDetails = {};
-
-  final allSelected = {
-    0: true,
-    1: true,
-    2: true,
-    3: true,
-    4: true,
-    5: true,
-    6: true,
+  Map<int, String> indexToDay = {
+    0: 'Monday',
+    1: 'Tuesday',
+    2: 'Wednesday',
+    3: 'Thursday',
+    4: 'Friday',
+    5: 'Saturday',
+    6: 'Sunday'
   };
-
-  Map<int, bool> hours_24 = {
-    0: false,
-    1: false,
-    2: false,
-    3: false,
-    4: false,
-    5: false,
-    6: false,
+  Map<String, int> dayToIndex = {
+    'Monday': 0,
+    'Tuesday': 1,
+    'Wednesday': 2,
+    'Thursday': 3,
+    'Friday': 4,
+    'Saturday': 5,
+    'Sunday': 6
   };
-
-  bool isLoading = false;
-  int errorIndex = -1;
-
-  List<String> weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  List<dynamic> openHours = [], closeHours = [];
-
-  bool areAllDaysSelected = false, areAll24HSelected = false;
-
   var image;
   double lat = 0.0, lon = 0.0;
-
+  bool isLoading = false;
   TextEditingController storeNameCon = TextEditingController(),
       phoneCon = TextEditingController(),
       cityCon = TextEditingController(),
@@ -76,559 +62,299 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Stack(
-        children: [
-          AbsorbPointer(
-            absorbing: isLoading,
-            child: Scaffold(
-              appBar: AppBar(
-                backgroundColor: Colors.white,
-                bottom: isLoading
-                    ? PreferredSize(
-                        child: LinearProgressIndicator(
-                          color: MyColors.primaryColor,
-                        ),
-                        preferredSize: Size.zero,
-                      )
-                    : null,
-                actions: [
-                  TextButton(
-                    onPressed: () async {
-                      days.forEach((key, value) {
-                        if (errorIndex != -1) {
-                          return;
-                        }
-                        if ((openHours[key] == '24' &&
-                                closeHours[key] != '24') ||
-                            (openHours[key] == 'closed' &&
-                                closeHours[key] != 'closed') ||
-                            (openHours[key] != '24' &&
-                                closeHours[key] == '24') ||
-                            (openHours[key] != 'closed' &&
-                                closeHours[key] == 'closed')) {
-                          setState(() {
-                            errorIndex = key;
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Timings are inappropriate'),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            ListView(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          text: 'Basic ',
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold),
+                          children: [
+                            TextSpan(
+                              text: 'Information',
+                              style: TextStyle(
+                                  fontFamily: 'ZenKurenaido',
+                                  fontWeight: FontWeight.normal),
                             ),
-                          );
-                          return;
-                        }
-                      });
-                      if (errorIndex != -1) {
-                        return;
-                      }
-                      if (storeNameCon.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Store Name can not be empty'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (phoneCon.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Phone Number can not be empty'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (!phoneCon.text.contains('+')) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Please enter phone number with country code'),
-                          ),
-                        );
-                        return;
-                      }
-                      updateDetails = createDataObject();
-                      if (DeepCollectionEquality().equals(initialDetails, updateDetails) && image == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'There is no change to update'),
-                          ),
-                        );
-                        return;
-                      }
-                      if (mounted)
-                        setState(() {
-                          isLoading = true;
-                          widget.onStateChange(touchWorks: !isLoading);
-                        });
-                      AllApis apis = AllApis();
-                      SharedPreferences pref =
-                          await SharedPreferences.getInstance();
-                      final token = pref.getString('token');
-                      final storeId = pref.getString('storeId');
-                      final response = await apis.updateStore(
-                        token: token,
-                        storeId: storeId,
-                        updateObject: updateDetails,
-                        file: image,
-                      );
-                      if (mounted)
-                        setState(() {
-                          isLoading = false;
-                          widget.onStateChange(touchWorks: !isLoading);
-                        });
-                      if (response != null && response.statusCode == 200) {
-                        AllData.productRepo = null;
-                        AllData.storeRepo = null;
-                        setState(() {
-                          widget.changeTab(index: 0, msg: 'Update Successful');
-                        });
-                      }
-                    },
-                    child: Text(
-                      'Save',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  )
-                ],
-                title: Text(
-                  'Store Details',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: ListView(
-                  children: [
-                    ExpandListView(
-                      children: getBasicInfo(),
-                      collapsedColor: MyColors.primaryColor,
-                      initiallyExpanded: true,
-                      title: Text(
-                        'Basic Information',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
+                          ],
                         ),
                       ),
-                    ),
-                    ExpandListView(
-                      children: getWorkingDaysList(),
-                      collapsedColor: MyColors.primaryColor,
-                      title: Text(
-                        'Store Timings',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: isLoading ? SpinKit.spinner : null,
-          )
-        ],
-      ),
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarDividerColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
-        statusBarIconBrightness: Brightness.dark,
-      ),
-    );
-    initializeStoreDetails(AllData.storeRepo);
-  }
-
-  List<Widget> getWorkingDaysList() {
-    List<Widget> workingDaysList = [];
-    if (AllData.storeRepo == null) return [];
-    Widget initial = SingleChildScrollView(
-      child: Center(
-        child: Container(
-          decoration: BoxDecoration(
-            color: MyColors.primaryColor,
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Container(
-                width: 50,
-                child: Center(
-                  child: Text(
-                    'All',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              Switch(
-                value: areAllDaysSelected,
-                onChanged: (_) {
-                  setState(
-                    () {
-                      areAllDaysSelected = _;
-                      days = {
-                        0: areAllDaysSelected,
-                        1: areAllDaysSelected,
-                        2: areAllDaysSelected,
-                        3: areAllDaysSelected,
-                        4: areAllDaysSelected,
-                        5: areAllDaysSelected,
-                        6: areAllDaysSelected,
-                      };
-                    },
-                  );
-                },
-              ),
-              Wrap(
-                direction: Axis.vertical,
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Checkbox(
-                    checkColor: MyColors.primaryColor,
-                    fillColor: MaterialStateColor.resolveWith((states) =>
-                        areAllDaysSelected ? Colors.white : Colors.grey),
-                    value: areAll24HSelected,
-                    onChanged: areAllDaysSelected
-                        ? (_) {
-                            setState(
-                              () {
-                                if (_ == true) {
-                                  openHours = [
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24'
-                                  ];
-                                  closeHours = [
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24',
-                                    '24'
-                                  ];
-                                }
-                                areAll24HSelected = _!;
-                                hours_24 = {
-                                  0: areAll24HSelected,
-                                  1: areAll24HSelected,
-                                  2: areAll24HSelected,
-                                  3: areAll24HSelected,
-                                  4: areAll24HSelected,
-                                  5: areAll24HSelected,
-                                  6: areAll24HSelected,
-                                };
-                              },
-                            );
-                          }
-                        : (_) {},
-                  ),
-                  Text(
-                    '24H',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  height: 40,
-                  width: 60,
-                  child: Center(
-                    child: Text(
-                      'Opening time',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  height: 40,
-                  width: 60,
-                  child: Center(
-                    child: Text(
-                      'Closing time',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      scrollDirection: Axis.horizontal,
-    );
-
-    workingDaysList.add(initial);
-
-    days.forEach((key, value) {
-      Widget item = Container(
-        child: SingleChildScrollView(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Container(
-                    width: 50,
-                    child: Center(
-                      child: Text(
-                        weekDays[key],
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  Switch(
-                    value: days[key] == true,
-                    onChanged: (_) {
-                      errorIndex = -1;
-                      setState(() {
-                        days[key] = _;
-                        if (!_) {
-                          openHours[key] = 'closed';
-                          closeHours[key] = 'closed';
-                        } else if (hours_24[key] == true) {
-                          openHours[key] = '24';
-                          closeHours[key] = '24';
-                        }
-                        if (days.toString() == allSelected.toString()) {
-                          areAllDaysSelected = true;
-                        } else {
-                          areAllDaysSelected = false;
-                        }
-                      });
-                    },
-                  ),
-                  Checkbox(
-                    checkColor: Colors.white,
-                    fillColor: MaterialStateColor.resolveWith((states) =>
-                        value ? MyColors.primaryColor : Colors.grey),
-                    value: hours_24[key] == true,
-                    onChanged: value
-                        ? (_) {
-                            setState(() {
-                              errorIndex = -1;
-                              hours_24[key] = _!;
-                              if (_) {
-                                openHours[key] = '24';
-                                closeHours[key] = '24';
-                              }
-                              if (hours_24.toString() ==
-                                  allSelected.toString()) {
-                                areAll24HSelected = true;
-                              } else {
-                                areAll24HSelected = false;
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          final updateDetails = {
+                            'storeName': '${storeNameCon.text}',
+                            'pinCode': '${postalCodeCon.text}',
+                            'city': '${cityCon.text}',
+                            'latitude': '$lat',
+                            'longitude': '$lon',
+                            'address': '${addressCon.text}',
+                            'phoneNumber': '${phoneCon.text}',
+                          };
+                          SharedPreferences.getInstance().then((value) {
+                            final token = value.getString('token');
+                            final storeId = value.getString('storeId');
+                            AllApis()
+                                .updateStore(
+                                    token: token,
+                                    storeId: storeId,
+                                    updateObject: updateDetails,
+                                    file: image)
+                                .then((value) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              if (value.statusCode == 200) {
+                                AllData.productRepo = null;
+                                AllData.storeRepo = null;
+                                widget.changeTab(
+                                    index: 0, msg: 'Update Successful');
                               }
                             });
-                          }
-                        : (_) {},
-                  ),
-                  TextButton(
-                    onPressed: value && hours_24[key] == false
-                        ? () async {
-                            errorIndex = -1;
-                            final time = await showTimePicker(
-                                context: context, initialTime: TimeOfDay.now());
-                            if (time != null) {
-                              setState(() {
-                                openHours[key] =
-                                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-                              });
-                            }
-                          }
-                        : () {},
-                    child: Container(
-                      height: 40,
-                      width: 60,
-                      decoration: BoxDecoration(
-                        color: value && hours_24[key] == false
-                            ? Colors.white
-                            : Colors.grey,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: value && hours_24[key] == false
-                              ? MyColors.primaryColor
-                              : Color(0xFF4A4A4A),
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
+                          });
+                        },
                         child: Text(
-                          openHours[key],
+                          'SAVE',
                           style: TextStyle(
-                            color: value && hours_24[key] == false
-                                ? Colors.black
-                                : Color(0xFF4A4A4A),
+                            fontSize: 15,
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: value && hours_24[key] == false
-                        ? () async {
-                            errorIndex = -1;
-                            final time = await showTimePicker(
-                                context: context, initialTime: TimeOfDay.now());
-                            if (time != null) {
-                              setState(() {
-                                closeHours[key] =
-                                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-                              });
-                            }
-                          }
-                        : () {},
-                    child: Container(
-                      height: 40,
-                      width: 60,
-                      decoration: BoxDecoration(
-                        color: value && hours_24[key] == false
-                            ? Colors.white
-                            : Colors.grey,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: value && hours_24[key] == false
-                              ? MyColors.primaryColor
-                              : Color(0xFF4A4A4A),
-                          width: 2,
+                ),
+                ...getBasicInfo(),
+                //___________________________Weekly Schedule starts from now on_________________________________________
+                SizedBox(
+                  height: 20,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          text: 'Weekly ',
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold),
+                          children: [
+                            TextSpan(
+                              text: 'Schedule',
+                              style: TextStyle(
+                                  fontFamily: 'ZenKurenaido',
+                                  fontWeight: FontWeight.normal),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Center(
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          Map<String, String> scheduleMap = {};
+                          workingDays.forEach((key, value) {
+                            if (checkIfOpen24(value)) {
+                              scheduleMap['openHours[${dayToIndex[key]}]'] =
+                                  '24';
+                              scheduleMap['closeHours[${dayToIndex[key]}]'] =
+                                  '24';
+                            } else {
+                              scheduleMap['openHours[${dayToIndex[key]}]'] =
+                                  value.calculateOpenHourAsString();
+                              scheduleMap['closeHours[${dayToIndex[key]}]'] =
+                                  value.calculateCloseHourAsString();
+                            }
+                          });
+                          print(scheduleMap);
+                          SharedPreferences.getInstance().then((value) {
+                            final token = value.getString('token');
+                            final storeId = value.getString('storeId');
+                            AllApis()
+                                .updateStore(
+                                    token: token,
+                                    storeId: storeId,
+                                    updateObject: scheduleMap,
+                                    file: image)
+                                .then((value) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              if (value.statusCode == 200) {
+                                AllData.productRepo = null;
+                                AllData.storeRepo = null;
+                                widget.changeTab(
+                                    index: 0, msg: 'Update Successful');
+                              }
+                            });
+                          });
+                        },
                         child: Text(
-                          closeHours[key],
+                          'SAVE',
                           style: TextStyle(
-                            color: value && hours_24[key] == false
-                                ? Colors.black
-                                : Color(0xFF4A4A4A),
+                            fontSize: 15,
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                workingDaysSelectionCheckBoxes(),
+                ...getDaysInfoCard(),
+              ],
             ),
-          ),
+            Center(
+              child: isLoading ? SpinKit.spinner : null,
+            ),
+          ],
         ),
-        color: errorIndex == key ? Colors.red : Colors.white,
-      );
-      workingDaysList.add(item);
-    });
-    return workingDaysList;
+      ),
+    );
   }
 
   List<Widget> getBasicInfo() {
     List<Widget> basicInfoList = [];
     Widget item = Padding(
-      padding: EdgeInsets.all(12.0),
+      padding: EdgeInsets.symmetric(horizontal: 12.0),
       child: Column(
         children: [
           Row(
             children: [
               Padding(
                 padding: const EdgeInsets.all(4.0),
-                child: GestureDetector(
-                  onTap: () async {
-                    try {
-                      final pickedImage = await ImagePicker()
-                          .getImage(source: ImageSource.gallery);
-                      if (pickedImage != null)
-                        setState(() {
-                          image = pickedImage;
-                        });
-                    } catch (e) {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text('Image access denies'),
-                          content: Text('Allow access?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text('No'),
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        try {
+                          final pickedImage = await ImagePicker()
+                              .pickImage(source: ImageSource.gallery);
+                          if (pickedImage != null)
+                            setState(() {
+                              image = pickedImage;
+                            });
+                        } catch (e) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text('Image access denies'),
+                              content: Text('Allow access?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('No'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+                                    await openAppSettings();
+                                  },
+                                  child: Text('Yes'),
+                                ),
+                              ],
                             ),
-                            TextButton(
-                              onPressed: () async {
-                                Navigator.pop(context);
-                                await openAppSettings();
-                              },
-                              child: Text('Yes'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    height: 100,
-                    width: 100,
-                    child: Center(
-                      child: image == null
-                          ? AllData.storeRepo['storeImage'] != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Image.network(
-                                    AllData.storeRepo['storeImage'],
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.cover,
+                          );
+                        }
+                      },
+                      child: Material(
+                        elevation: 5.0,
+                        borderRadius: BorderRadius.circular(5.0),
+                        child: Container(
+                          height: 100,
+                          width: 100,
+                          child: Center(
+                            child: image == null
+                                ? AllData.storeRepo['storeImage'] != null
+                                    ? ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(5.0),
+                                        child: Image.network(
+                                          AllData.storeRepo['storeImage'],
+                                          height: 100,
+                                          width: 100,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.add_a_photo,
+                                      )
+                                : ClipRRect(
+                                    borderRadius: BorderRadius.circular(5),
+                                    child: Image.file(
+                                      File(image.path),
+                                      height: 100,
+                                      width: 100,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
-                                )
-                              : Icon(
-                                  Icons.add_a_photo,
-                                )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(5),
-                              child: Image.file(
-                                File(image.path),
-                                height: 100,
-                                width: 100,
-                                fit: BoxFit.cover,
-                              ),
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                            color: Color(0xFFDADADA),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (AllData.storeRepo['storeImage'] != null)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            isLoading = true;
+                            AllData.storeRepo['storeImage'] = null;
+                          });
+                          SharedPreferences.getInstance().then((value) {
+                            final token = value.getString('token');
+                            final storeId = value.getString('storeId');
+                            AllApis()
+                                .deleteImageFromStore(
+                                    token: token, storeId: storeId)
+                                .then((value) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            });
+                          });
+                        },
+                        child: Container(
+                          width: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              bottomRight: Radius.circular(4.0),
+                              bottomLeft: Radius.circular(4.0),
                             ),
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                      color: Color(0xFFDADADA),
-                    ),
-                  ),
+                            color: Colors.white70,
+                          ),
+                          child: Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Expanded(
@@ -639,16 +365,19 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(5.0),
-                        child: Container(
-                          height: 40,
-                          child: TextField(
-                            controller: storeNameCon,
-                            decoration: InputDecoration(
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 0, horizontal: 8.0),
-                              labelText: 'Store Name',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(4),
+                        child: Material(
+                          elevation: 5.0,
+                          child: Container(
+                            height: 40,
+                            child: TextField(
+                              controller: storeNameCon,
+                              decoration: InputDecoration(
+                                fillColor: Colors.white,
+                                hintText: 'Store Name',
+                                hintStyle: TextStyle(
+                                    fontSize: 14, fontFamily: 'ZenKurenaido'),
+                                filled: true,
+                                border: InputBorder.none,
                               ),
                             ),
                           ),
@@ -656,16 +385,22 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                       ),
                       Padding(
                         padding: const EdgeInsets.all(5.0),
-                        child: Container(
-                          height: 40,
-                          child: TextField(
-                            controller: phoneCon,
-                            decoration: InputDecoration(
-                              labelText: 'Phone Number',
-                              contentPadding: EdgeInsets.symmetric(
-                                  vertical: 0, horizontal: 8.0),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(4),
+                        child: Material(
+                          elevation: 5.0,
+                          child: Container(
+                            height: 40,
+                            //TODO: Manage phone number text field so country code is not disturbed
+                            //Suggestion: Re-verify the phone number and extract the value of phone number
+                            child: TextField(
+                              controller: phoneCon,
+                              keyboardType: TextInputType.phone,
+                              decoration: InputDecoration(
+                                fillColor: Colors.white,
+                                hintText: 'Phone Number',
+                                hintStyle: TextStyle(
+                                    fontSize: 14, fontFamily: 'ZenKurenaido'),
+                                filled: true,
+                                border: InputBorder.none,
                               ),
                             ),
                           ),
@@ -704,22 +439,20 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      height: 40,
-                      child: TextField(
-                        enabled: false,
-                        controller: cityCon,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 0, horizontal: 8.0),
-                          labelText: 'City',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                            borderSide:
-                                BorderSide(width: 2, color: Colors.grey),
+                    child: Material(
+                      elevation: 5.0,
+                      child: Container(
+                        height: 40,
+                        child: TextField(
+                          enabled: false,
+                          controller: cityCon,
+                          decoration: InputDecoration(
+                            fillColor: Colors.white,
+                            hintText: 'City',
+                            hintStyle: TextStyle(
+                                fontSize: 14, fontFamily: 'ZenKurenaido'),
+                            filled: true,
+                            border: InputBorder.none,
                           ),
                         ),
                       ),
@@ -727,22 +460,20 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      height: 40,
-                      child: TextField(
-                        enabled: false,
-                        controller: postalCodeCon,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 0, horizontal: 8.0),
-                          labelText: 'Postal Code',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                            borderSide:
-                                BorderSide(width: 2, color: Colors.grey),
+                    child: Material(
+                      elevation: 5.0,
+                      child: Container(
+                        height: 40,
+                        child: TextField(
+                          enabled: false,
+                          controller: postalCodeCon,
+                          decoration: InputDecoration(
+                            fillColor: Colors.white,
+                            hintText: 'Postal Code',
+                            hintStyle: TextStyle(
+                                fontSize: 14, fontFamily: 'ZenKurenaido'),
+                            filled: true,
+                            border: InputBorder.none,
                           ),
                         ),
                       ),
@@ -750,22 +481,20 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      height: 40,
-                      child: TextField(
-                        enabled: false,
-                        controller: addressCon,
-                        decoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 0, horizontal: 8.0),
-                          labelText: 'Address',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(4),
-                            borderSide:
-                                BorderSide(width: 2, color: Colors.grey),
+                    child: Material(
+                      elevation: 5.0,
+                      child: Container(
+                        height: 40,
+                        child: TextField(
+                          enabled: false,
+                          controller: addressCon,
+                          decoration: InputDecoration(
+                            fillColor: Colors.white,
+                            hintText: 'Address',
+                            hintStyle: TextStyle(
+                                fontSize: 14, fontFamily: 'ZenKurenaido'),
+                            filled: true,
+                            border: InputBorder.none,
                           ),
                         ),
                       ),
@@ -782,6 +511,127 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
     return basicInfoList;
   }
 
+  workingDaysSelectionCheckBoxes() {
+    List<Widget> checkBoxes = [];
+    workingDays.forEach(
+      (key, value) {
+        checkBoxes.add(
+          ChoiceChip(
+            selectedColor: MyColors.primaryColor,
+            label: Text(
+              key.toString().substring(0, 1),
+              style: TextStyle(
+                color: value.getIsOpened() ? Colors.white : Colors.black,
+              ),
+            ),
+            selected: value.getIsOpened(),
+            onSelected: (_) {
+              setState(() {
+                workingDays[key]!.setIsOpened(_);
+              });
+            },
+          ),
+        );
+      },
+    );
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Wrap(
+          children: checkBoxes,
+        ),
+      ),
+    );
+  }
+
+  getDaysInfoCard() {
+    List<Widget> cards = [];
+    bool first = true;
+    workingDays.forEach(
+      (key, value) {
+        if (value.getIsOpened() == true) {
+          final initiallyExpanded = first;
+          first = false;
+          cards.add(
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ExpandListView(
+                initiallyExpanded: initiallyExpanded,
+                children: <Widget>[
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Checkbox(
+                          activeColor: MyColors.primaryColor,
+                          value: value.getIsOpen24(),
+                          onChanged: (val) {
+                            setState(
+                              () {
+                                value.setIsOpen24(val);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      Text('OPEN 24H'),
+                    ],
+                  ),
+                  if (value.getIsOpen24() == false)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          TimeTextField(
+                            onTimeChange: (time) {
+                              value.setOpenHour(time);
+                            },
+                            initialValue: value.getOpenHour(),
+                          ),
+                          SizedBox(
+                            width: 20,
+                          ),
+                          TimeTextField(
+                            onTimeChange: (time) {
+                              value.setCloseHour(time);
+                            },
+                            initialValue: value.getCloseHour(),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+                title: Text(
+                  key,
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontFamily: 'ZenKurenaido',
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          );
+        }
+      },
+    );
+    return cards;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
+    initializeStoreDetails(AllData.storeRepo);
+  }
+
   void initializeStoreDetails(storeRepo) {
     if (storeRepo != null) {
       lat = storeRepo['latitude'];
@@ -791,38 +641,33 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
       cityCon.text = storeRepo['city'];
       postalCodeCon.text = storeRepo['pinCode'].toString();
       addressCon.text = storeRepo['address'];
-      openHours = storeRepo['openHours'];
-      closeHours = storeRepo['closeHours'];
+      final openHours = storeRepo['openHours'];
+      final closeHours = storeRepo['closeHours'];
       for (int i = 0; i < 7; i++) {
-        days[i] = openHours[i] != 'closed';
-        hours_24[i] = openHours[i] == '24';
+        workingDays[indexToDay[i]]!.setOpenHour(
+            openHours[i] != 'closed' && openHours[i] != '24'
+                ? openHours[i]
+                : '_ _ : _ _');
+        workingDays[indexToDay[i]]!.setCloseHour(
+            closeHours[i] != 'closed' && closeHours[i] != '24'
+                ? closeHours[i]
+                : '_ _ : _ _');
+        workingDays[indexToDay[i]]!.setIsOpened(openHours[i] != 'closed');
+        workingDays[indexToDay[i]]!.setIsOpen24(openHours[i] == '24');
       }
-      if (days.toString() == allSelected.toString()) {
-        areAllDaysSelected = true;
-      }
-      if (hours_24.toString() == allSelected.toString()) {
-        areAll24HSelected = true;
-      }
-      initialDetails = createDataObject();
     }
   }
 
-  Map<String, String> createDataObject() {
-    Map<String, String> timings = {};
-    for (int i = 0; i < 7; i++) {
-      timings.addAll({"openHours[$i]": openHours[i]});
-      timings.addAll({"closeHours[$i]": closeHours[i]});
+  bool checkIfOpen24(value) {
+    final openTime = value.calculateOpenHourAsString();
+    final closeTime = value.calculateCloseHourAsString();
+    if (openTime == '24' ||
+        openTime == 'closed' ||
+        closeTime == '24' ||
+        closeTime == 'closed') return false;
+    if (openTime == closeTime) {
+      return true;
     }
-    final updateDetails = {
-      'storeName': '${storeNameCon.text}',
-      'pinCode': '${postalCodeCon.text}',
-      'city': '${cityCon.text}',
-      'latitude': '$lat',
-      'longitude': '$lon',
-      'address': '${addressCon.text}',
-      'phoneNumber': '${phoneCon.text}',
-    };
-    updateDetails.addAll(timings);
-    return updateDetails;
+    return false;
   }
 }

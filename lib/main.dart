@@ -9,15 +9,12 @@ import 'package:get_my_ride_partners_1/screens/verification/checkNumber.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarDividerColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      statusBarIconBrightness: Brightness.dark,
-    ),
-  );
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.white, // navigation bar color
+    statusBarColor: Colors.white, // status bar color
+    systemNavigationBarIconBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.dark,
+  ));
   runApp(MyApp());
 }
 
@@ -31,7 +28,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: MaterialColor(MyColors.primaryColor.value, MyColors.colorMap))
+                primarySwatch: MaterialColor(
+                    MyColors.primaryColor.value, MyColors.colorMap))
             .copyWith(secondary: Colors.white),
       ),
       home: SplashScreen(),

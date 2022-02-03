@@ -6,7 +6,8 @@ import 'package:get_my_ride_partners_1/screens/verification/checkNumber.dart';
 import 'package:http/http.dart' as http;
 
 class AllApis {
-  static const String base_url = 'https://madhuram-marketapis.herokuapp.com';
+  static const String base_url =
+      'http://ec2-3-110-118-193.ap-south-1.compute.amazonaws.com:3000';
   static var staticContext;
   static var staticPage;
 
@@ -41,12 +42,15 @@ class AllApis {
       });
       http.Response response =
           await http.post(uri, headers: header, body: body);
+      print(response.body);
       if (response.statusCode == 500) {
+        print(500);
         navigate();
         return null;
       }
       return response;
     } catch (e) {
+      print('catch $e');
       navigate();
       return null;
     }
@@ -146,10 +150,10 @@ class AllApis {
   Future<dynamic> addOrUpdateProductToStore({
     @required token,
     @required storeId,
-    @required file,
+    files,
     @required model,
-    @required licencePlate,
-    @required rentPerHour,
+    licencePlate,
+    rentPerHour,
     @required rentPerDay,
     @required criteria,
     isUpdating = false,
@@ -158,35 +162,45 @@ class AllApis {
     try {
       var headers = {
         'Authorization': token.toString(),
+        'Content-Type': 'application/json',
       };
       String path = 'createProduct';
       String method = 'POST';
+      Map<String, String> obj = {
+        'store': storeId,
+        'model': model,
+      };
+
+      if (licencePlate != null) obj['licencePlate'] = licencePlate;
+      if (licencePlate != null) obj['rentPerHour'] = rentPerHour;
+      if (licencePlate != null) obj['rentPerDay'] = rentPerDay;
+      if (licencePlate != null) obj['criteria'] = criteria;
       if (isUpdating) {
         method = 'PATCH';
         path = 'updateProduct?id=$id';
       }
       var request =
           http.MultipartRequest(method, Uri.parse('$base_url/products/$path'));
-      request.fields.addAll(
-        {
-          'store': storeId,
-          'model': model,
-          'licencePlate': licencePlate,
-          'rentPerHour': rentPerHour,
-          'rentPerDay': rentPerDay,
-          'criteria': criteria,
-        },
-      );
-      if (file != null) {
-        var pic = await http.MultipartFile.fromPath("productImages", file.path);
-        request.files.add(pic);
+
+      request.fields.addAll(obj);
+      print('files = $files');
+      if (files != null) {
+        for (final file in files) {
+          print('file = $file');
+          if (file != null) {
+            var pic =
+                await http.MultipartFile.fromPath("productImages", file);
+            request.files.add(pic);
+          }
+        }
       }
 
       request.headers.addAll(headers);
 
       http.StreamedResponse responseStream = await request.send();
       final response = await http.Response.fromStream(responseStream);
-
+      print(response.statusCode);
+      print(response.body);
       if (response.statusCode == 200) {
         return response;
       }
@@ -199,6 +213,7 @@ class AllApis {
       }
       return response;
     } catch (e) {
+      print('catch = $e');
       navigate();
       return null;
     }
@@ -215,6 +230,7 @@ class AllApis {
     try {
       var headers = {
         'Authorization': token.toString(),
+        'Content-Type': 'application/json',
       };
       var request = http.MultipartRequest(
           'POST', Uri.parse('$base_url/stores/createStore'));
@@ -266,6 +282,7 @@ class AllApis {
     try {
       var headers = {
         'Authorization': token.toString(),
+        'Content-Type': 'application/json',
       };
       var request = http.MultipartRequest(
           'PATCH', Uri.parse('$base_url/stores/updateStore?id=$storeId'));
@@ -291,10 +308,83 @@ class AllApis {
       }
       return response;
     } catch (e) {
+      print('catch in updateStore = $e');
       navigate();
       return null;
     }
   }
+
+  Future<dynamic> deleteImageFromProduct({
+    @required token,
+    @required productId,
+    @required deleteLink,
+  }) async {
+    http.Response response;
+    try {
+      var headers = {
+        'Authorization': token.toString(),
+        'Content-Type': 'application/json',
+      };
+      response = await http.patch(
+        Uri.parse('$base_url/products/deleteImage?id=$productId'),
+        body: json.encode(
+          {"deleteLink": deleteLink},
+        ),
+        headers: headers,
+      );
+      print(response.statusCode);
+      print(response.body);
+      print({"deleteLink": deleteLink});
+      if (response.statusCode == 200) {
+        return response;
+      }
+      if (response.statusCode == 500) {
+        navigate();
+        return null;
+      } else if (response.statusCode == 401) {
+        authenticate();
+        return null;
+      }
+      return response;
+    } catch (e) {
+      print('catch = $e');
+      navigate();
+      return null;
+    }
+  }
+
+  Future<dynamic> deleteImageFromStore({
+    @required token,
+    @required storeId,
+  }) async {
+    http.Response response;
+    try {
+      var headers = {
+        'Authorization': token.toString(),
+        'Content-Type': 'application/json',
+      };
+      response = await http.delete(
+        Uri.parse('$base_url/stores/deleteStoreImage?id=$storeId'),
+        headers: headers,
+      );
+      if (response.statusCode == 200) {
+        return response;
+      }
+      if (response.statusCode == 500) {
+        navigate();
+        return null;
+      } else if (response.statusCode == 401) {
+        authenticate();
+        return null;
+      }
+      return response;
+    } catch (e) {
+      print('catch deleteImage = $e');
+      navigate();
+      return null;
+    }
+  }
+
 
   void navigate() {
     Navigator.pushReplacement(

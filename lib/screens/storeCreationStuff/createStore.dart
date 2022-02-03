@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
@@ -54,7 +53,6 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return AbsorbPointer(
       absorbing: isLoading,
       child: Scaffold(
@@ -89,7 +87,7 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
                                 onTap: () async {
                                   try {
                                     final pickedImage = await ImagePicker()
-                                        .getImage(source: ImageSource.gallery);
+                                        .pickImage(source: ImageSource.gallery);
                                     if (pickedImage != null)
                                       setState(() {
                                         image = pickedImage;
@@ -366,7 +364,6 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
       SystemUiOverlayStyle(
         statusBarColor: Colors.white,
         systemNavigationBarColor: Colors.white,
-        systemNavigationBarDividerColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
         statusBarIconBrightness: Brightness.dark,
       ),
@@ -411,20 +408,25 @@ class _CreateStoreScreenState extends State<CreateStoreScreen> {
           desiredAccuracy: LocationAccuracy.best);
       lat = position.latitude;
       lon = position.longitude;
-      final addresses = await placemarkFromCoordinates(lat, lon);
-      marker = Marker(
-        markerId: MarkerId('location'),
-        position: LatLng(lat, lon),
-      );
-      setState(() {
-        var mark1;
-        if (addresses.isNotEmpty) mark1 = addresses[0];
-        if (mark1 != null) address = mark1;
-        _googleMapController.animateCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(target: LatLng(lat, lon), zoom: zoom),
-          ),
+      try {
+        final addresses = await placemarkFromCoordinates(lat, lon);
+        marker = Marker(
+          markerId: MarkerId('location'),
+          position: LatLng(lat, lon),
         );
+        setState(() {
+          var mark1;
+          if (addresses.isNotEmpty) mark1 = addresses[0];
+          if (mark1 != null) address = mark1;
+          _googleMapController.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(target: LatLng(lat, lon), zoom: zoom),
+            ),
+          );
+          isLoading = false;
+        });
+      } catch (e) {}
+      setState(() {
         isLoading = false;
       });
     }
