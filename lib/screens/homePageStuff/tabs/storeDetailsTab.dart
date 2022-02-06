@@ -247,36 +247,29 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                   children: [
                     GestureDetector(
                       onTap: () async {
-                        try {
-                          final pickedImage = await ImagePicker()
-                              .pickImage(source: ImageSource.gallery);
-                          if (pickedImage != null)
+                        if (AllData.storeRepo['storeImage'] != null) {
+                          _showPopupMenu(onImageChoose: () async {
+                            await chooseImage();
+                          }, onImageDelete: () {
                             setState(() {
-                              image = pickedImage;
+                              isLoading = true;
+                              AllData.storeRepo['storeImage'] = null;
                             });
-                        } catch (e) {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Image access denies'),
-                              content: Text('Allow access?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('No'),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    await openAppSettings();
-                                  },
-                                  child: Text('Yes'),
-                                ),
-                              ],
-                            ),
-                          );
+                            SharedPreferences.getInstance().then((value) {
+                              final token = value.getString('token');
+                              final storeId = value.getString('storeId');
+                              AllApis()
+                                  .deleteImageFromStore(
+                                      token: token, storeId: storeId)
+                                  .then((value) {
+                                setState(() {
+                                  isLoading = false;
+                                });
+                              });
+                            });
+                          });
+                        } else {
+                          await chooseImage();
                         }
                       },
                       child: Material(
@@ -318,42 +311,6 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
                         ),
                       ),
                     ),
-                    if (AllData.storeRepo['storeImage'] != null)
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            isLoading = true;
-                            AllData.storeRepo['storeImage'] = null;
-                          });
-                          SharedPreferences.getInstance().then((value) {
-                            final token = value.getString('token');
-                            final storeId = value.getString('storeId');
-                            AllApis()
-                                .deleteImageFromStore(
-                                    token: token, storeId: storeId)
-                                .then((value) {
-                              setState(() {
-                                isLoading = false;
-                              });
-                            });
-                          });
-                        },
-                        child: Container(
-                          width: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              bottomRight: Radius.circular(4.0),
-                              bottomLeft: Radius.circular(4.0),
-                            ),
-                            color: Colors.white70,
-                          ),
-                          child: Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                            size: 30,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -669,5 +626,60 @@ class _StoreDetailsTabState extends State<StoreDetailsTab> {
       return true;
     }
     return false;
+  }
+
+  _showPopupMenu({onImageChoose, onImageDelete}) {
+    showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(50.0, 160.0, 100.0, 0.0),
+      //position where you want to show the menu on screen
+      items: [
+        PopupMenuItem<String>(child: const Text('Choose Image'), value: '1'),
+        PopupMenuItem<String>(child: const Text('Delete Image'), value: '2'),
+      ],
+      elevation: 8.0,
+    ).then(
+      (value) {
+        if (value == '1') {
+          onImageChoose();
+        } else if (value == '2') {
+          onImageDelete();
+        }
+      },
+    );
+  }
+
+  Future<void> chooseImage() async {
+    try {
+      final pickedImage =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickedImage != null)
+        setState(() {
+          image = pickedImage;
+        });
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Image access denies'),
+          content: Text('Allow access?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await openAppSettings();
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

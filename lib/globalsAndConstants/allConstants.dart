@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class MyColors {
-  static const primaryColor = Color(0xFFFF9933);
+  static const primaryColor = Color(0xFF259568);
   static const secondaryColor = Color(0xFFBA68C8);
   static const tertiaryColor = Colors.blueAccent;
   static const Map<int, Color> colorMap = {

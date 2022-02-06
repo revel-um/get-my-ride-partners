@@ -52,9 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
               )
             : BottomNavigationBar(
                 currentIndex: navigationIndex,
-                selectedItemColor: navigationIndex == 1
-                    ? Color(0xFFFF9933)
-                    : MyColors.primaryColor,
+                selectedItemColor: MyColors.primaryColor,
                 backgroundColor: Colors.white,
                 onTap: (index) {
                   navigationIndex = index;

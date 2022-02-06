@@ -55,12 +55,20 @@ class _AddVehiclesTabState extends State<AddVehiclesTab> {
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(),
+                      ),
                       (route) => false);
                 },
-                icon: Icon(Icons.arrow_back),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.black,
+                ),
               ),
-              title: Text('Edit Vehicle'),
+              title: Text(
+                'Edit Vehicle',
+                style: TextStyle(color: Colors.black),
+              ),
               centerTitle: true,
             )
           : null,
