@@ -180,151 +180,156 @@ class _StoreTabState extends State<StoreTab> {
     return AbsorbPointer(
       absorbing: isLoading,
       child: SafeArea(
-        child: ShimmerWidget(
-          isLoading: isLoading,
-          child: Column(
-            children: [
-              Container(
-                child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ShimmerWidget(
+            isLoading: isLoading,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          isLoading
-                              ? Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  height: 20,
-                                  width: 100,
-                                )
-                              : Text(
-                                  storeRepo['storeName'],
-                                  style: TextStyle(
-                                    letterSpacing: 2,
-                                    fontSize: 22,
-                                    color: Colors.white,
-                                    wordSpacing: 2,
-                                    fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: GestureDetector(
+                          onTap: () async {},
+                          child: Container(
+                            height: 45,
+                            child: TextField(
+                              controller: searchCon,
+                              onChanged: (_) {
+                                _onSearchChanged(_);
+                              },
+                              decoration: InputDecoration(
+                                suffixIcon: showCancelButton
+                                    ? IconButton(
+                                        icon: Icon(
+                                          Icons.clear,
+                                          color: Colors.black,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            showCancelButton = false;
+                                          });
+                                          searchCon.clear();
+                                          _onSearchChanged('');
+                                        },
+                                      )
+                                    : null,
+                                hintText: 'Search',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey,
+                                ),
+                                contentPadding: EdgeInsets.zero,
+                                prefixIcon: Icon(
+                                  Icons.search,
+                                  color: MyColors.primaryColor,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: Color(0xFFECECEC),
+                                    width: 2,
                                   ),
                                 ),
-                          Material(
-                            elevation: 5,
-                            borderRadius: BorderRadius.circular(99),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(99),
-                              child: CircleAvatar(
-                                child: storeRepo != null
-                                    ? storeRepo['storeImage'] != null
-                                        ? Image.network(
-                                            storeRepo['storeImage'],
-                                            height: 50,
-                                            width: 50,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Container(
-                                            height: 40,
-                                            width: 40,
-                                            decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: MyColors.primaryColor),
-                                            child: Center(
-                                              child: Text(
-                                                storeRepo['storeName']
-                                                    .toString()
-                                                    .characters
-                                                    .first,
-                                              ),
-                                            ),
-                                          )
-                                    : Icon(Icons.settings),
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: getVehicleChips(),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Material(
-                        elevation: 10,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          height: 45,
-                          child: TextField(
-                            controller: searchCon,
-                            onChanged: (_) {
-                              _onSearchChanged(_);
-                            },
-                            decoration: InputDecoration(
-                              fillColor: Colors.white,
-                              hintText: 'Model, licence plate, vehicle type...',
-                              suffixIcon: showCancelButton
-                                  ? IconButton(
-                                      icon: Icon(
-                                        Icons.clear,
-                                        color: Colors.black,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          showCancelButton = false;
-                                        });
-                                        searchCon.clear();
-                                        _onSearchChanged('');
-                                      },
-                                    )
-                                  : null,
-                              hintStyle: TextStyle(
-                                  fontSize: 14, fontFamily: 'ZenKurenaido'),
-                              filled: true,
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none),
-                            ),
+                        elevation: 5,
+                        borderRadius: BorderRadius.circular(99),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(99),
+                          child: CircleAvatar(
+                            child: storeRepo != null
+                                ? storeRepo['storeImage'] != null
+                                    ? Image.network(
+                                        storeRepo['storeImage'],
+                                        height: 50,
+                                        width: 50,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Container(
+                                        height: 40,
+                                        width: 40,
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: MyColors.primaryColor),
+                                        child: Center(
+                                          child: Text(
+                                            storeRepo['storeName']
+                                                .toString()
+                                                .characters
+                                                .first,
+                                          ),
+                                        ),
+                                      )
+                                : Icon(Icons.settings),
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                decoration: BoxDecoration(
-                    color: MyColors.primaryColor,
-                    borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(40.0),
-                      bottomLeft: Radius.circular(40.0),
-                    )),
-              ),
-              isLoading
-                  ? Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: Colors.grey,
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: isLoading
+                        ? Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            height: 20,
+                            width: 100,
+                          )
+                        : Text(
+                            storeRepo['storeName'],
+                            style: TextStyle(
+                              letterSpacing: 2,
+                              wordSpacing: 2,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: getVehicleChips(),
+                  ),
+                ),
+                isLoading
+                    ? Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
-                      ),
-                    )
-                  : Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
+                      )
+                    : Expanded(
                         child: ListView(
+                          shrinkWrap: true,
                           children: children,
                         ),
                       ),
-                    ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -340,6 +345,7 @@ class _StoreTabState extends State<StoreTab> {
 
   @override
   void initState() {
+    super.initState();
     print('initState');
     var keyboardVisibilityController = KeyboardVisibilityController();
     keyboardSubscription =
@@ -348,17 +354,14 @@ class _StoreTabState extends State<StoreTab> {
         FocusScope.of(context).unfocus();
       }
     });
-    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-          statusBarColor: MyColors.primaryColor,
-          systemNavigationBarColor: Colors.white,
-          systemNavigationBarIconBrightness: Brightness.dark,
-          statusBarIconBrightness: Brightness.light,
-        ),
-      );
-    });
-    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+      ),
+    );
     if (AllData.storeRepo == null) {
       initAll();
     } else {
@@ -408,19 +411,14 @@ class _StoreTabState extends State<StoreTab> {
     List<Widget> chips = [];
     vehicleTypes.forEach((key, value) {
       chips.add(ChoiceChip(
-        side: BorderSide(
-          color: Colors.white,
-          width: 2,
-        ),
         label: Text(
           key,
           style: TextStyle(
-            color: value ? Colors.black : Colors.white,
-            fontWeight: value ? FontWeight.bold : FontWeight.normal,
+            color: value ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        selectedColor: Colors.white,
-        backgroundColor: MyColors.primaryColor,
+        selectedColor: MyColors.primaryColor,
         selected: value,
         onSelected: (bool selected) {
           setState(() {
@@ -452,10 +450,8 @@ class _StoreTabState extends State<StoreTab> {
     List<Widget> list = [];
     productRepo.forEach((element) {
       if (vehicleTypes[element['criteria'].toString().toUpperCase()] == true) {
-        String searchText =
+        final searchText =
             element['criteria'].toLowerCase() + element['model'].toLowerCase();
-        if (element['licencePlate'] != null)
-          searchText = searchText + element['licencePlate'].toLowerCase();
         query = query.toLowerCase();
         if (isSubsequence(query, searchText)) {
           Widget item = Padding(
@@ -464,6 +460,7 @@ class _StoreTabState extends State<StoreTab> {
               elevation: 10,
               borderRadius: BorderRadius.circular(20),
               child: Container(
+                height: MediaQuery.of(context).size.height / 2.4,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -474,6 +471,7 @@ class _StoreTabState extends State<StoreTab> {
                       children: [
                         Container(
                           height: MediaQuery.of(context).size.height / 3.5,
+                          width: double.infinity,
                           child: ClipRRect(
                             borderRadius: BorderRadius.only(
                               topLeft: Radius.circular(20),
@@ -483,7 +481,6 @@ class _StoreTabState extends State<StoreTab> {
                                     element['productImages'].isNotEmpty
                                 ? Image.network(
                                     element['productImages'][0],
-                                    width: double.infinity,
                                     fit: BoxFit.cover,
                                   )
                                 : Icon(Icons.image_not_supported_sharp),
@@ -494,14 +491,16 @@ class _StoreTabState extends State<StoreTab> {
                             bottom: 20.0,
                             child: Container(
                               height: 35,
-                              width: 80,
                               child: Center(
-                                child: Text(
-                                  '\u20B9${element['rentPerDay']} / Day',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    '\u20B9${element['rentPerDay']} / Day',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16),
+                                  ),
                                 ),
                               ),
                               decoration: BoxDecoration(

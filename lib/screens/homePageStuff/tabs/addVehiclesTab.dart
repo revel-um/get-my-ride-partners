@@ -304,8 +304,8 @@ class _AddVehiclesTabState extends State<AddVehiclesTab> {
                   id: widget.repo != null ? widget.repo['_id'] : null,
                   model: controllers['Model Name']![0].text,
                   licencePlate: controllers['License Plate Number']![0].text,
-                  rentPerHour: controllers['Price per day']![0].text,
-                  rentPerDay: controllers['Price per hour']![0].text,
+                  rentPerHour: controllers['Price per hour']![0].text,
+                  rentPerDay: controllers['Price per day']![0].text,
                   criteria: currentCriteria,
                 );
                 if (response == null) {
