@@ -1,9 +1,9 @@
 import 'package:country_code_picker/country_code_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class CountryCodePickerWidget extends StatelessWidget {
   final onChanged;
+
   CountryCodePickerWidget({@required this.onChanged});
 
   @override
@@ -16,7 +16,8 @@ class CountryCodePickerWidget extends StatelessWidget {
         child: Center(
           child: CountryCodePicker(
             initialSelection: 'IN',
-            onChanged: onChanged,
+            onChanged: null,
+            enabled: false,
             flagDecoration: BoxDecoration(
               shape: BoxShape.circle,
             ),

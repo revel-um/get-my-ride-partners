@@ -7,7 +7,7 @@ import 'package:get_my_ride_partners_1/screens/storeCreationStuff/createStore.da
 import 'package:get_my_ride_partners_1/screens/verification/checkNumber.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() async{
+void main() {
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     systemNavigationBarColor: Colors.white, // navigation bar color
     statusBarColor: Colors.white, // status bar color
@@ -27,9 +27,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: MaterialColor(
-                    MyColors.primaryColor.value, MyColors.colorMap))
-            .copyWith(secondary: Colors.white),
+          primarySwatch:
+              MaterialColor(MyColors.primaryColor.value, MyColors.colorMap),
+        ).copyWith(secondary: Colors.white),
       ),
       home: SplashScreen(),
     );

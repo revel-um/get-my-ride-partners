@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class AllApis {
   static const String base_url =
-      'http://ec2-3-110-118-193.ap-south-1.compute.amazonaws.com:3000';
+      'http://ec2-13-233-97-124.ap-south-1.compute.amazonaws.com:3000';
   static var staticContext;
   static var staticPage;
 
@@ -188,8 +188,7 @@ class AllApis {
         for (final file in files) {
           print('file = $file');
           if (file != null) {
-            var pic =
-                await http.MultipartFile.fromPath("productImages", file);
+            var pic = await http.MultipartFile.fromPath("productImages", file);
             request.files.add(pic);
           }
         }
@@ -238,11 +237,11 @@ class AllApis {
         {
           'storeName': storeName,
           'pinCode': address.postalCode,
-          'city': address.locality,
+          'city': address.subAdministrativeArea,
           'latitude': latitude.toString(),
           'longitude': longitude.toString(),
           'address':
-              '${address.name} ${address.postalCode} ${address.locality}',
+              '${address.name} ${address.postalCode} ${address.locality} ${address.subAdministrativeArea}',
           'phoneNumber': phoneNumber,
         },
       );
@@ -384,7 +383,6 @@ class AllApis {
       return null;
     }
   }
-
 
   void navigate() {
     Navigator.pushReplacement(
