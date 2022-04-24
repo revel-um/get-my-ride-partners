@@ -57,319 +57,387 @@ class _AddVehiclesTabState extends State<AddVehiclesTab> {
     Size size = MediaQuery.of(context).size;
     double height = size.height;
     return Scaffold(
-      appBar: widget.repo != null
-          ? AppBar(
-              backgroundColor: Colors.white,
-              leading: IconButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomeScreen(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomeScreen(),
+                ),
+                (route) => false);
+          },
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.black,
+          ),
+        ),
+        title: Text(
+          widget.repo != null ? 'EDIT VEHICLE' : 'ADD VEHICLE',
+          style: TextStyle(color: Colors.black),
+        ),
+        centerTitle: true,
+        actions: widget.repo != null
+            ? [
+                TextButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: Text('Are you sure?'),
+                        content: Text(
+                            'Once you delete this item, you will not be able to recover it. Do you want to continue?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext);
+                            },
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              final id = widget.repo['_id'];
+                              SharedPreferences.getInstance().then((value) {
+                                final token = value.getString('token');
+                                print(token);
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                AllApis()
+                                    .deleteProductById(
+                                        token: token, productId: id)
+                                    .then((value) {
+                                  setState(() {
+                                    isLoading = false;
+                                    if (value == null) return;
+                                    AllData.resetStoreTabData();
+                                    widget.onStateChange(
+                                        touchWorks: !isLoading);
+                                    widget.changeTab(index: 0);
+                                  });
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HomeScreen(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                });
+                              });
+                            },
+                            child: Text('Okay'),
+                          ),
+                        ],
                       ),
-                      (route) => false);
-                },
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.black,
+                    );
+                  },
+                  child: Text(
+                    'DELETE',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                )
+              ]
+            : [],
+      ),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          ListView(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                child: Text(
+                  'Category',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              title: Text(
-                'Edit Vehicle',
-                style: TextStyle(color: Colors.black),
+              SizedBox(
+                height: 10,
               ),
-              centerTitle: true,
-            )
-          : null,
-      backgroundColor: Colors.white,
-      body: ListView(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: 16.0, vertical: widget.repo != null ? 4.0 : 0.0),
-            child: Text(
-              'Category',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          SizedBox(
-            height: 10,
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: getListOfOptions(),
-          ),
-          SizedBox(
-            height: 20,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              'Choose Images (Max: 4)',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              height: 200,
-              child: Material(
-                borderRadius: BorderRadius.circular(20),
-                shadowColor: Colors.white,
-                elevation: 20,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                          imagePaths = [];
-                          List<XFile>? pickedImages =
-                              await _picker.pickMultiImage();
-                          imagePaths.addAll(imageLinks);
-                          final remaining = 4 - imagePaths.length;
-                          setState(() {
-                            currentIndex = 0;
-                          });
-                          if (pickedImages != null) {
-                            if (imagePaths.isNotEmpty)
-                              carouselController.animateToPage(0);
-                            int count = 0;
-                            for (XFile image in pickedImages) {
-                              count++;
-                              imagePaths.add(image.path);
-                              if (count == remaining) break;
-                            }
-                            setState(() {});
-                          }
-                        },
-                        child: imagePaths.isNotEmpty
-                            ? Container(
-                                color: Color(0xFFEBECF0),
-                                child: CarouselSlider(
-                                  carouselController: carouselController,
-                                  options: CarouselOptions(
-                                      viewportFraction: 1.0,
-                                      height: 3 * height / 4.3,
-                                      enlargeCenterPage: false,
-                                      enableInfiniteScroll:
-                                          imagePaths.length > 1,
-                                      onPageChanged: (index, reason) {
-                                        setState(() {
-                                          currentIndex = index;
-                                        });
-                                      }),
-                                  items: imagePaths.map((i) {
-                                    return Builder(
-                                      builder: (BuildContext context) {
-                                        return Container(
-                                          width: double.infinity,
-                                          child: NetworkAndFileImage(
-                                            imageData: i,
-                                            fit: BoxFit.cover,
-                                            iconColor: Colors.black,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                            height: 3 * height / 4.3,
-                                          ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: getListOfOptions(),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Choose Images (Max: 4)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Container(
+                  height: 200,
+                  child: Material(
+                    borderRadius: BorderRadius.circular(20),
+                    shadowColor: Colors.white,
+                    elevation: 20,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                            onTap: () async {
+                              imagePaths = [];
+                              List<XFile>? pickedImages =
+                                  await _picker.pickMultiImage();
+                              imagePaths.addAll(imageLinks);
+                              final remaining = 4 - imagePaths.length;
+                              setState(() {
+                                currentIndex = 0;
+                              });
+                              if (pickedImages != null) {
+                                if (imagePaths.isNotEmpty)
+                                  carouselController.animateToPage(0);
+                                int count = 0;
+                                for (XFile image in pickedImages) {
+                                  count++;
+                                  imagePaths.add(image.path);
+                                  if (count == remaining) break;
+                                }
+                                setState(() {});
+                              }
+                            },
+                            child: imagePaths.isNotEmpty
+                                ? Container(
+                                    color: Color(0xFFEBECF0),
+                                    child: CarouselSlider(
+                                      carouselController: carouselController,
+                                      options: CarouselOptions(
+                                          viewportFraction: 1.0,
+                                          height: 3 * height / 4.3,
+                                          enlargeCenterPage: false,
+                                          enableInfiniteScroll:
+                                              imagePaths.length > 1,
+                                          onPageChanged: (index, reason) {
+                                            setState(() {
+                                              currentIndex = index;
+                                            });
+                                          }),
+                                      items: imagePaths.map((i) {
+                                        return Builder(
+                                          builder: (BuildContext context) {
+                                            return Container(
+                                              width: double.infinity,
+                                              child: NetworkAndFileImage(
+                                                imageData: i,
+                                                fit: BoxFit.cover,
+                                                iconColor: Colors.black,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                height: 3 * height / 4.3,
+                                              ),
+                                            );
+                                          },
                                         );
-                                      },
+                                      }).toList(),
+                                    ),
+                                  )
+                                : Container(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    child: Icon(Icons.add_a_photo),
+                                    color: Color(0xFFFFFFFF),
+                                  ),
+                          ),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: double.infinity,
+                              color: Colors.white38,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ...imagePaths.asMap().entries.map((entry) {
+                                    return Container(
+                                      width: 8.0,
+                                      height: 8.0,
+                                      margin: EdgeInsets.symmetric(
+                                          vertical: 8.0, horizontal: 4.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: (Theme.of(context).brightness ==
+                                                    Brightness.dark
+                                                ? Colors.white
+                                                : Colors.black)
+                                            .withOpacity(
+                                          currentIndex == entry.key ? 0.9 : 0.4,
+                                        ),
+                                      ),
                                     );
                                   }).toList(),
-                                ),
-                              )
-                            : Container(
-                                width: double.infinity,
-                                height: double.infinity,
-                                child: Icon(Icons.add_a_photo),
-                                color: Color(0xFFFFFFFF),
-                              ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: double.infinity,
-                          color: Colors.white38,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              ...imagePaths.asMap().entries.map((entry) {
-                                return Container(
-                                  width: 8.0,
-                                  height: 8.0,
-                                  margin: EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 4.0),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: (Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                            : Colors.black)
-                                        .withOpacity(
-                                      currentIndex == entry.key ? 0.9 : 0.4,
+                                  if (imagePaths.isNotEmpty)
+                                    IconButton(
+                                      onPressed: () async {
+                                        if (imagePaths[currentIndex]
+                                            .toString()
+                                            .startsWith('http')) {
+                                          final link =
+                                              imageLinks.removeAt(currentIndex);
+                                          imagePaths.removeAt(currentIndex);
+                                          setState(() {
+                                            print('link = $link');
+                                          });
+                                          SharedPreferences.getInstance()
+                                              .then((value) {
+                                            final token =
+                                                value.getString('token');
+                                            final productId =
+                                                widget.repo['_id'];
+                                            AllApis()
+                                                .deleteImageFromProduct(
+                                                    token: token,
+                                                    productId: productId,
+                                                    deleteLink: link)
+                                                .then((value) {
+                                              if (value.statusCode == 200) {
+                                                print('statusCode 200');
+                                                AllData.resetStoreTabData();
+                                              }
+                                            });
+                                          });
+                                        } else {
+                                          imagePaths.removeAt(currentIndex);
+                                          if (imagePaths.isNotEmpty)
+                                            carouselController.animateToPage(0);
+                                          setState(() {
+                                            currentIndex = 0;
+                                          });
+                                        }
+                                      },
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }).toList(),
-                              if (imagePaths.isNotEmpty)
-                                IconButton(
-                                  onPressed: () async {
-                                    if (imagePaths[currentIndex]
-                                        .toString()
-                                        .startsWith('http')) {
-                                      final link =
-                                          imageLinks.removeAt(currentIndex);
-                                      imagePaths.removeAt(currentIndex);
-                                      setState(() {
-                                        print('link = $link');
-                                      });
-                                      SharedPreferences.getInstance()
-                                          .then((value) {
-                                        final token = value.getString('token');
-                                        final productId = widget.repo['_id'];
-                                        AllApis()
-                                            .deleteImageFromProduct(
-                                                token: token,
-                                                productId: productId,
-                                                deleteLink: link)
-                                            .then((value) {
-                                          if (value.statusCode == 200) {
-                                            print('statusCode 200');
-                                            AllData.storeRepo = null;
-                                            AllData.productRepo = null;
-                                          }
-                                        });
-                                      });
-                                    } else {
-                                      imagePaths.removeAt(currentIndex);
-                                      if (imagePaths.isNotEmpty)
-                                        carouselController.animateToPage(0);
-                                      setState(() {
-                                        currentIndex = 0;
-                                      });
-                                    }
-                                  },
-                                  icon: Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                            ],
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          ...getTextFields(),
-          GestureDetector(
-            onTap: () async {
-              if (currentCriteria.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('You have to select criteria of vehicle')));
-                return;
-              }
-              bool stopLoop = false;
-              controllers.forEach((key, value) {
-                if (stopLoop == true) {
-                  return;
-                }
-                if (value[0].text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$key can not be empty'),
-                    ),
-                  );
-                  stopLoop = true;
-                }
-              });
-              if (stopLoop) {
-                stopLoop = false;
-                return;
-              }
-              setState(() {
-                isLoading = true;
-                if (widget.onStateChange != null)
-                  widget.onStateChange(touchWorks: !isLoading);
-              });
-              AllApis apis = AllApis();
-              List pickedFiles = [];
-              imagePaths.forEach((element) {
-                if (!element.startsWith('http')) {
-                  pickedFiles.add(element);
-                }
-              });
-              SharedPreferences pref = await SharedPreferences.getInstance();
-              final token = pref.getString('token');
-              final storeId = pref.getString('storeId');
-              final response = await apis.addOrUpdateProductToStore(
-                token: token,
-                storeId: storeId,
-                files: pickedFiles,
-                isUpdating: widget.repo != null,
-                id: widget.repo != null ? widget.repo['_id'] : null,
-                model: controllers['Model Name']![0].text,
-                licencePlate: controllers['License Plate Number']![0].text,
-                rentPerHour: controllers['Price per hour']![0].text,
-                rentPerDay: controllers['Price per day']![0].text,
-                criteria: currentCriteria,
-              );
-              if (response == null) {
-                setState(() {
-                  isLoading = false;
-                  if (widget.onStateChange != null)
-                    widget.onStateChange(touchWorks: !isLoading);
-                });
-                return;
-              }
-              if (response.statusCode == 200) {
-                if (widget.repo != null) {
-                  AllData.resetStoreTabData();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeScreen(),
-                    ),
-                    (route) => false,
-                  );
-                } else {
-                  setState(() {
-                    AllData.resetStoreTabData();
-                    widget.changeTab(index: 0);
+              ...getTextFields(),
+              GestureDetector(
+                onTap: () async {
+                  if (currentCriteria.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content:
+                            Text('You have to select criteria of vehicle')));
+                    return;
+                  }
+                  bool stopLoop = false;
+                  controllers.forEach((key, value) {
+                    if (stopLoop == true) {
+                      return;
+                    }
+                    if (value[0].text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$key can not be empty'),
+                        ),
+                      );
+                      stopLoop = true;
+                    }
                   });
-                }
-              }
-              setState(() {
-                isLoading = false;
-                if (widget.onStateChange != null)
-                  widget.onStateChange(touchWorks: !isLoading);
-              });
-            },
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: Material(
-                  elevation: 10,
-                  child: Container(
-                    width: 100,
-                    height: 40,
-                    child: Center(
-                        child: Text(
-                      'SAVE',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                    )),
-                    decoration: BoxDecoration(color: MyColors.primaryColor),
+                  if (stopLoop) {
+                    stopLoop = false;
+                    return;
+                  }
+                  setState(() {
+                    isLoading = true;
+                    if (widget.onStateChange != null)
+                      widget.onStateChange(touchWorks: !isLoading);
+                  });
+                  AllApis apis = AllApis();
+                  List pickedFiles = [];
+                  imagePaths.forEach((element) {
+                    if (!element.startsWith('http')) {
+                      pickedFiles.add(element);
+                    }
+                  });
+                  SharedPreferences pref =
+                      await SharedPreferences.getInstance();
+                  final token = pref.getString('token');
+                  final storeId = pref.getString('storeId');
+                  final response = await apis.addOrUpdateProductToStore(
+                    token: token,
+                    storeId: storeId,
+                    files: pickedFiles,
+                    isUpdating: widget.repo != null,
+                    id: widget.repo != null ? widget.repo['_id'] : null,
+                    model: controllers['Model Name']![0].text,
+                    licencePlate: controllers['License Plate Number']![0].text,
+                    rentPerHour: controllers['Price per hour']![0].text,
+                    rentPerDay: controllers['Price per day']![0].text,
+                    criteria: currentCriteria,
+                  );
+                  if (response == null) {
+                    setState(() {
+                      isLoading = false;
+                      if (widget.onStateChange != null)
+                        widget.onStateChange(touchWorks: !isLoading);
+                    });
+                    return;
+                  }
+                  if (response.statusCode == 200) {
+                    if (widget.repo != null) {
+                      AllData.resetStoreTabData();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HomeScreen(),
+                        ),
+                        (route) => false,
+                      );
+                    } else {
+                      setState(() {
+                        AllData.resetStoreTabData();
+                        widget.changeTab(index: 0);
+                      });
+                    }
+                  }
+                  setState(() {
+                    isLoading = false;
+                    if (widget.onStateChange != null)
+                      widget.onStateChange(touchWorks: !isLoading);
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 4.0),
+                  child: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Material(
+                      elevation: 10,
+                      child: Container(
+                        width: 100,
+                        height: 40,
+                        child: Center(
+                            child: Text(
+                          'SAVE',
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        )),
+                        decoration: BoxDecoration(color: MyColors.primaryColor),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          )
+              )
+            ],
+          ),
+          Center(child: isLoading ? SpinKit.spinner : null),
         ],
       ),
     );
